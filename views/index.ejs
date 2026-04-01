@@ -65,15 +65,29 @@
 
         <div id="results" class="hidden space-y-8">
             <div class="bg-slate-800/50 backdrop-blur-xl rounded-3xl p-4 sm:p-8 border border-slate-700/50 shadow-2xl glow">
-                <div class="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
-                    <div class="w-20 h-20 sm:w-24 sm:h-24 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center flex-shrink-0">
-                        <svg class="w-10 h-10 sm:w-12 sm:h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
-                        </svg>
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="col-span-2 lg:col-span-1 flex flex-col sm:flex-row lg:flex-col items-center gap-4 bg-slate-900/40 rounded-2xl p-4">
+                        <div class="w-16 h-16 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center flex-shrink-0">
+                            <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+                            </svg>
+                        </div>
+                        <div class="text-center">
+                            <p class="text-slate-400 text-xs font-medium mb-1">People Detected</p>
+                            <p id="personCount" class="text-5xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">0</p>
+                        </div>
                     </div>
-                    <div class="text-center sm:text-left">
-                        <h3 class="text-slate-400 text-sm font-medium mb-2">People Detected</h3>
-                        <p id="personCount" class="text-4xl sm:text-6xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">0</p>
+                    <div class="flex flex-col items-center justify-center bg-slate-900/40 rounded-2xl p-4 gap-2">
+                        <p class="text-slate-400 text-xs font-medium">Avg Confidence</p>
+                        <p id="avgConfidence" class="text-3xl font-bold text-emerald-400">0%</p>
+                    </div>
+                    <div class="flex flex-col items-center justify-center bg-slate-900/40 rounded-2xl p-4 gap-2">
+                        <p class="text-slate-400 text-xs font-medium">Density Level</p>
+                        <span id="densityBadge" class="text-sm font-bold px-3 py-1 rounded-full">-</span>
+                    </div>
+                    <div class="flex flex-col items-center justify-center bg-slate-900/40 rounded-2xl p-4 gap-2">
+                        <p class="text-slate-400 text-xs font-medium">Processing Time</p>
+                        <p id="processingTime" class="text-3xl font-bold text-sky-400">0ms</p>
                     </div>
                 </div>
             </div>
@@ -91,7 +105,10 @@
                 <div class="bg-slate-800/50 backdrop-blur-xl rounded-3xl overflow-hidden border border-slate-700/50 shadow-2xl hover:scale-[1.02] transition-transform duration-300">
                     <div class="bg-slate-700/50 px-4 sm:px-6 py-3 sm:py-4 border-b border-slate-600/50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
                         <h3 class="text-base sm:text-lg font-semibold text-white">Detection Results</h3>
-                        <span class="bg-gradient-to-r from-indigo-500 to-purple-600 text-white text-xs font-bold px-3 sm:px-4 py-1 sm:py-1.5 rounded-full">AI Processed</span>
+                        <div class="flex items-center gap-2">
+                            <span class="bg-gradient-to-r from-indigo-500 to-purple-600 text-white text-xs font-bold px-3 sm:px-4 py-1 sm:py-1.5 rounded-full">AI Processed</span>
+                            <button id="downloadBtn" onclick="downloadResult()" class="bg-slate-600 hover:bg-slate-500 text-white text-xs font-bold px-3 py-1.5 rounded-full transition-colors duration-200">⬇ Download</button>
+                        </div>
                     </div>
                     <div class="p-4 sm:p-6 bg-slate-900/30">
                         <img id="outputImage" class="w-full rounded-2xl shadow-xl" alt="Output">
@@ -142,7 +159,8 @@
                 alert('Please select an image first!');
                 return;
             }
-            
+
+            analyzeBtn.disabled = true;
             document.getElementById('loading').classList.remove('hidden');
             document.getElementById('results').classList.add('hidden');
             
@@ -169,13 +187,37 @@
                     
                     document.getElementById('personCount').textContent = result.person_count;
                     document.getElementById('outputImage').src = result.output_image;
+
+                    document.getElementById('avgConfidence').textContent = result.avg_confidence + '%';
+                    document.getElementById('processingTime').textContent = result.processing_time_ms + 'ms';
+
+                    const densityColors = {
+                        'Empty':     'bg-slate-600 text-slate-200',
+                        'Low':       'bg-emerald-500/20 text-emerald-400',
+                        'Medium':    'bg-yellow-500/20 text-yellow-400',
+                        'High':      'bg-orange-500/20 text-orange-400',
+                        'Very High': 'bg-red-500/20 text-red-400'
+                    };
+                    const badge = document.getElementById('densityBadge');
+                    badge.textContent = result.density_level;
+                    badge.className = 'text-sm font-bold px-3 py-1 rounded-full ' + (densityColors[result.density_level] || 'bg-slate-600 text-slate-200');
                 } else {
                     throw new Error(result.error || 'Upload failed');
                 }
             } catch (error) {
                 document.getElementById('loading').classList.add('hidden');
                 alert('Error: ' + error.message);
+            } finally {
+                analyzeBtn.disabled = false;
             }
+        }
+
+        function downloadResult() {
+            const img = document.getElementById('outputImage');
+            const a = document.createElement('a');
+            a.href = img.src;
+            a.download = 'crowd-detection-result.jpg';
+            a.click();
         }
     </script>
 </body>
