@@ -3,79 +3,94 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Crowd Counter</title>
+    <title>AI Crowd Analysis System</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: {
-                        'inter': ['Inter', 'sans-serif']
-                    }
-                }
-            }
-        }
-    </script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Inter', sans-serif; }
         .gradient-bg { background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%); }
         .glow { box-shadow: 0 0 40px rgba(99, 102, 241, 0.3); }
+        .alert-glow { box-shadow: 0 0 40px rgba(239, 68, 68, 0.5); }
         .border-3 { border-width: 3px; }
+        .tab-active { background: linear-gradient(to right, #6366f1, #9333ea); color: white; }
     </style>
 </head>
 <body class="gradient-bg min-h-screen">
     <div class="container mx-auto px-4 py-8 max-w-7xl">
-        <header class="text-center mb-12">
+
+        <header class="text-center mb-10">
             <div class="flex flex-col sm:flex-row items-center justify-center gap-4 mb-3">
                 <div class="w-14 h-14 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center glow flex-shrink-0">
                     <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
                     </svg>
                 </div>
-                <h1 class="text-3xl sm:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">AI Crowd Counter</h1>
+                <h1 class="text-3xl sm:text-5xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">AI Crowd Analysis System</h1>
             </div>
             <p class="text-slate-400 text-base sm:text-lg font-medium">Powered by YOLOv8 Neural Network</p>
         </header>
 
+        <!-- Mode Tabs -->
+        <div class="flex gap-3 mb-6 bg-slate-800/50 p-2 rounded-2xl border border-slate-700/50 w-fit mx-auto">
+            <button id="tabImage" onclick="switchMode('image')" class="tab-active px-6 py-2 rounded-xl font-semibold text-sm transition-all duration-300">🖼 Image</button>
+            <button id="tabVideo" onclick="switchMode('video')" class="px-6 py-2 rounded-xl font-semibold text-sm text-slate-400 hover:text-white transition-all duration-300">🎥 Video</button>
+        </div>
+
+        <!-- Upload Card -->
         <div class="bg-slate-800/50 backdrop-blur-xl rounded-3xl p-4 sm:p-8 mb-8 border border-slate-700/50 shadow-2xl">
             <div id="uploadArea" class="border-3 border-dashed border-slate-600 rounded-2xl p-8 sm:p-16 text-center transition-all duration-300 hover:border-indigo-500 hover:bg-slate-700/30 cursor-pointer">
                 <svg class="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-4 sm:mb-6 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
                 </svg>
-                <h3 class="text-xl sm:text-2xl font-bold text-white mb-2">Upload Image</h3>
+                <h3 class="text-xl sm:text-2xl font-bold text-white mb-2" id="uploadTitle">Upload Image</h3>
                 <p class="text-slate-400 mb-4 sm:mb-6 text-sm sm:text-base" id="fileName">Drag & drop or click to browse</p>
                 <input type="file" id="imageInput" accept="image/*" class="hidden">
-                <button onclick="document.getElementById('imageInput').click()" class="bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-6 sm:px-8 py-2 sm:py-3 rounded-xl font-semibold hover:from-indigo-600 hover:to-purple-700 transition-all duration-300 shadow-lg hover:shadow-indigo-500/50 hover:scale-105 text-sm sm:text-base">
+                <input type="file" id="videoInput" accept="video/*" class="hidden">
+                <button onclick="triggerUpload()" class="bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-6 sm:px-8 py-2 sm:py-3 rounded-xl font-semibold hover:from-indigo-600 hover:to-purple-700 transition-all duration-300 shadow-lg hover:scale-105 text-sm sm:text-base">
                     Choose File
                 </button>
             </div>
-            <button id="analyzeBtn" onclick="uploadImage()" disabled class="w-full mt-4 sm:mt-6 bg-gradient-to-r from-emerald-500 to-teal-600 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-xl font-bold text-base sm:text-lg hover:from-emerald-600 hover:to-teal-700 transition-all duration-300 shadow-lg disabled:from-slate-600 disabled:to-slate-700 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-3 hover:scale-[1.02]">
+
+            <!-- Alert Threshold -->
+            <div class="mt-4 flex items-center gap-4 bg-slate-900/40 rounded-xl px-4 py-3">
+                <span class="text-slate-400 text-sm font-medium whitespace-nowrap">⚠ Alert Threshold:</span>
+                <input type="range" id="thresholdSlider" min="1" max="100" value="10" class="flex-1 accent-indigo-500" oninput="document.getElementById('thresholdVal').textContent = this.value">
+                <span id="thresholdVal" class="text-indigo-400 font-bold text-sm w-8 text-center">10</span>
+                <span class="text-slate-400 text-sm">people</span>
+            </div>
+
+            <button id="analyzeBtn" onclick="analyze()" disabled class="w-full mt-4 sm:mt-6 bg-gradient-to-r from-emerald-500 to-teal-600 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-xl font-bold text-base sm:text-lg hover:from-emerald-600 hover:to-teal-700 transition-all duration-300 shadow-lg disabled:from-slate-600 disabled:to-slate-700 disabled:cursor-not-allowed flex items-center justify-center gap-3 hover:scale-[1.02]">
                 <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                 </svg>
-                Analyze Image
+                Analyze
             </button>
         </div>
 
+        <!-- Loading -->
         <div id="loading" class="hidden bg-slate-800/50 backdrop-blur-xl rounded-3xl p-8 sm:p-16 text-center border border-slate-700/50 shadow-2xl">
             <div class="w-16 h-16 sm:w-20 sm:h-20 border-4 border-slate-600 border-t-indigo-500 rounded-full animate-spin mx-auto mb-4 sm:mb-6"></div>
-            <p class="text-lg sm:text-xl font-semibold text-indigo-400">Analyzing image...</p>
+            <p class="text-lg sm:text-xl font-semibold text-indigo-400" id="loadingText">Analyzing...</p>
         </div>
 
-        <div id="results" class="hidden space-y-8">
+        <!-- Alert Banner -->
+        <div id="alertBanner" class="hidden mb-6 bg-red-500/20 border border-red-500/50 rounded-2xl p-4 flex items-center gap-4 alert-glow">
+            <span class="text-3xl">🚨</span>
+            <div>
+                <p class="text-red-400 font-bold text-lg">CROWD ALERT!</p>
+                <p id="alertMsg" class="text-red-300 text-sm"></p>
+            </div>
+        </div>
+
+        <!-- Image Results -->
+        <div id="imageResults" class="hidden space-y-6">
+            <!-- Stats -->
             <div class="bg-slate-800/50 backdrop-blur-xl rounded-3xl p-4 sm:p-8 border border-slate-700/50 shadow-2xl glow">
                 <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div class="col-span-2 lg:col-span-1 flex flex-col sm:flex-row lg:flex-col items-center gap-4 bg-slate-900/40 rounded-2xl p-4">
-                        <div class="w-16 h-16 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center flex-shrink-0">
-                            <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
-                            </svg>
-                        </div>
-                        <div class="text-center">
-                            <p class="text-slate-400 text-xs font-medium mb-1">People Detected</p>
-                            <p id="personCount" class="text-5xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">0</p>
-                        </div>
+                    <div class="col-span-2 lg:col-span-1 flex flex-col items-center justify-center bg-slate-900/40 rounded-2xl p-4 gap-2">
+                        <p class="text-slate-400 text-xs font-medium">People Detected</p>
+                        <p id="personCount" class="text-5xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">0</p>
                     </div>
                     <div class="flex flex-col items-center justify-center bg-slate-900/40 rounded-2xl p-4 gap-2">
                         <p class="text-slate-400 text-xs font-medium">Avg Confidence</p>
@@ -92,124 +107,275 @@
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-8">
-                <div class="bg-slate-800/50 backdrop-blur-xl rounded-3xl overflow-hidden border border-slate-700/50 shadow-2xl hover:scale-[1.02] transition-transform duration-300">
-                    <div class="bg-slate-700/50 px-4 sm:px-6 py-3 sm:py-4 border-b border-slate-600/50">
-                        <h3 class="text-base sm:text-lg font-semibold text-white">Original Image</h3>
-                    </div>
-                    <div class="p-4 sm:p-6 bg-slate-900/30">
-                        <img id="originalImage" class="w-full rounded-2xl shadow-xl" alt="Original">
-                    </div>
+            <!-- Image Tabs -->
+            <div class="bg-slate-800/50 backdrop-blur-xl rounded-3xl overflow-hidden border border-slate-700/50 shadow-2xl">
+                <div class="bg-slate-700/50 px-4 sm:px-6 py-3 border-b border-slate-600/50 flex gap-2 flex-wrap">
+                    <button onclick="showImgTab('original')" id="btnOriginal" class="tab-active px-4 py-1.5 rounded-lg text-sm font-semibold transition-all">Original</button>
+                    <button onclick="showImgTab('detection')" id="btnDetection" class="px-4 py-1.5 rounded-lg text-sm font-semibold text-slate-400 hover:text-white transition-all">Detection</button>
+                    <button onclick="showImgTab('heatmap')" id="btnHeatmap" class="px-4 py-1.5 rounded-lg text-sm font-semibold text-slate-400 hover:text-white transition-all">Heatmap</button>
+                    <button onclick="downloadResult()" class="ml-auto bg-slate-600 hover:bg-slate-500 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition-colors">⬇ Download</button>
                 </div>
-
-                <div class="bg-slate-800/50 backdrop-blur-xl rounded-3xl overflow-hidden border border-slate-700/50 shadow-2xl hover:scale-[1.02] transition-transform duration-300">
-                    <div class="bg-slate-700/50 px-4 sm:px-6 py-3 sm:py-4 border-b border-slate-600/50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-                        <h3 class="text-base sm:text-lg font-semibold text-white">Detection Results</h3>
-                        <div class="flex items-center gap-2">
-                            <span class="bg-gradient-to-r from-indigo-500 to-purple-600 text-white text-xs font-bold px-3 sm:px-4 py-1 sm:py-1.5 rounded-full">AI Processed</span>
-                            <button id="downloadBtn" onclick="downloadResult()" class="bg-slate-600 hover:bg-slate-500 text-white text-xs font-bold px-3 py-1.5 rounded-full transition-colors duration-200">⬇ Download</button>
-                        </div>
-                    </div>
-                    <div class="p-4 sm:p-6 bg-slate-900/30">
-                        <img id="outputImage" class="w-full rounded-2xl shadow-xl" alt="Output">
-                    </div>
+                <div class="p-4 sm:p-6 bg-slate-900/30">
+                    <img id="originalImage" class="w-full rounded-2xl shadow-xl" alt="Original">
+                    <img id="outputImage" class="w-full rounded-2xl shadow-xl hidden" alt="Detection">
+                    <img id="heatmapImage" class="w-full rounded-2xl shadow-xl hidden" alt="Heatmap">
                 </div>
             </div>
         </div>
+
+        <!-- Video Results -->
+        <div id="videoResults" class="hidden space-y-6">
+            <div class="bg-slate-800/50 backdrop-blur-xl rounded-3xl p-4 sm:p-8 border border-slate-700/50 shadow-2xl glow">
+                <div class="grid grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div class="flex flex-col items-center justify-center bg-slate-900/40 rounded-2xl p-4 gap-2">
+                        <p class="text-slate-400 text-xs font-medium">Peak Count</p>
+                        <p id="maxCount" class="text-5xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">0</p>
+                    </div>
+                    <div class="flex flex-col items-center justify-center bg-slate-900/40 rounded-2xl p-4 gap-2">
+                        <p class="text-slate-400 text-xs font-medium">Avg Count</p>
+                        <p id="avgCount" class="text-3xl font-bold text-emerald-400">0</p>
+                    </div>
+                    <div class="flex flex-col items-center justify-center bg-slate-900/40 rounded-2xl p-4 gap-2">
+                        <p class="text-slate-400 text-xs font-medium">Density Level</p>
+                        <span id="videoDensityBadge" class="text-sm font-bold px-3 py-1 rounded-full">-</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Crowd Over Time Chart -->
+            <div class="bg-slate-800/50 backdrop-blur-xl rounded-3xl p-4 sm:p-8 border border-slate-700/50 shadow-2xl">
+                <h3 class="text-white font-semibold mb-4">📈 Crowd Count Over Time</h3>
+                <canvas id="crowdChart" height="100"></canvas>
+            </div>
+
+            <!-- Video Preview Tabs -->
+            <div class="bg-slate-800/50 backdrop-blur-xl rounded-3xl overflow-hidden border border-slate-700/50 shadow-2xl">
+                <div class="bg-slate-700/50 px-4 sm:px-6 py-3 border-b border-slate-600/50 flex gap-2">
+                    <button onclick="showVidTab('preview')" id="btnVidPreview" class="tab-active px-4 py-1.5 rounded-lg text-sm font-semibold transition-all">Last Frame</button>
+                    <button onclick="showVidTab('vidheatmap')" id="btnVidHeatmap" class="px-4 py-1.5 rounded-lg text-sm font-semibold text-slate-400 hover:text-white transition-all">Heatmap</button>
+                </div>
+                <div class="p-4 sm:p-6 bg-slate-900/30">
+                    <img id="videoPreview" class="w-full rounded-2xl shadow-xl" alt="Preview">
+                    <img id="videoHeatmap" class="w-full rounded-2xl shadow-xl hidden" alt="Heatmap">
+                </div>
+            </div>
+        </div>
+
     </div>
 
     <script>
-        const imageInput = document.getElementById('imageInput');
-        const uploadArea = document.getElementById('uploadArea');
-        const analyzeBtn = document.getElementById('analyzeBtn');
-        const fileName = document.getElementById('fileName');
+        let currentMode = 'image';
+        let crowdChartInstance = null;
 
-        imageInput.addEventListener('change', function() {
-            if (this.files && this.files[0]) {
-                analyzeBtn.disabled = false;
-                fileName.textContent = this.files[0].name;
+        const densityColors = {
+            'Empty':     'bg-slate-600 text-slate-200',
+            'Low':       'bg-emerald-500/20 text-emerald-400',
+            'Medium':    'bg-yellow-500/20 text-yellow-400',
+            'High':      'bg-orange-500/20 text-orange-400',
+            'Very High': 'bg-red-500/20 text-red-400'
+        };
+
+        function switchMode(mode) {
+            currentMode = mode;
+            document.getElementById('tabImage').className = mode === 'image'
+                ? 'tab-active px-6 py-2 rounded-xl font-semibold text-sm transition-all duration-300'
+                : 'px-6 py-2 rounded-xl font-semibold text-sm text-slate-400 hover:text-white transition-all duration-300';
+            document.getElementById('tabVideo').className = mode === 'video'
+                ? 'tab-active px-6 py-2 rounded-xl font-semibold text-sm transition-all duration-300'
+                : 'px-6 py-2 rounded-xl font-semibold text-sm text-slate-400 hover:text-white transition-all duration-300';
+            document.getElementById('uploadTitle').textContent = mode === 'image' ? 'Upload Image' : 'Upload Video';
+            document.getElementById('fileName').textContent = 'Drag & drop or click to browse';
+            document.getElementById('analyzeBtn').disabled = true;
+            document.getElementById('imageResults').classList.add('hidden');
+            document.getElementById('videoResults').classList.add('hidden');
+            document.getElementById('alertBanner').classList.add('hidden');
+        }
+
+        function triggerUpload() {
+            document.getElementById(currentMode === 'image' ? 'imageInput' : 'videoInput').click();
+        }
+
+        document.getElementById('imageInput').addEventListener('change', function() {
+            if (this.files[0]) {
+                document.getElementById('fileName').textContent = this.files[0].name;
+                document.getElementById('analyzeBtn').disabled = false;
             }
         });
 
-        uploadArea.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            uploadArea.classList.add('border-indigo-500', 'bg-slate-700/30');
+        document.getElementById('videoInput').addEventListener('change', function() {
+            if (this.files[0]) {
+                document.getElementById('fileName').textContent = this.files[0].name;
+                document.getElementById('analyzeBtn').disabled = false;
+            }
         });
 
-        uploadArea.addEventListener('dragleave', () => {
-            uploadArea.classList.remove('border-indigo-500', 'bg-slate-700/30');
-        });
-
+        const uploadArea = document.getElementById('uploadArea');
+        uploadArea.addEventListener('dragover', (e) => { e.preventDefault(); uploadArea.classList.add('border-indigo-500', 'bg-slate-700/30'); });
+        uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('border-indigo-500', 'bg-slate-700/30'));
         uploadArea.addEventListener('drop', (e) => {
             e.preventDefault();
             uploadArea.classList.remove('border-indigo-500', 'bg-slate-700/30');
-            
             const files = e.dataTransfer.files;
             if (files.length > 0) {
-                imageInput.files = files;
-                analyzeBtn.disabled = false;
-                fileName.textContent = files[0].name;
+                const input = document.getElementById(currentMode === 'image' ? 'imageInput' : 'videoInput');
+                input.files = files;
+                document.getElementById('fileName').textContent = files[0].name;
+                document.getElementById('analyzeBtn').disabled = false;
             }
         });
 
-        async function uploadImage() {
-            const file = imageInput.files[0];
-            
-            if (!file) {
-                alert('Please select an image first!');
-                return;
-            }
+        async function analyze() {
+            currentMode === 'image' ? await analyzeImage() : await analyzeVideo();
+        }
 
-            analyzeBtn.disabled = true;
+        async function analyzeImage() {
+            const file = document.getElementById('imageInput').files[0];
+            if (!file) return;
+
+            const threshold = document.getElementById('thresholdSlider').value;
+            document.getElementById('analyzeBtn').disabled = true;
             document.getElementById('loading').classList.remove('hidden');
-            document.getElementById('results').classList.add('hidden');
-            
+            document.getElementById('loadingText').textContent = 'Analyzing image...';
+            document.getElementById('imageResults').classList.add('hidden');
+            document.getElementById('alertBanner').classList.add('hidden');
+
             const reader = new FileReader();
-            reader.onload = function(e) {
-                document.getElementById('originalImage').src = e.target.result;
-            };
+            reader.onload = (e) => document.getElementById('originalImage').src = e.target.result;
             reader.readAsDataURL(file);
-            
+
             const formData = new FormData();
             formData.append('file', file);
-            
+
             try {
-                const response = await fetch('/upload', {
-                    method: 'POST',
-                    body: formData
-                });
-                
+                const response = await fetch(`/upload?threshold=${threshold}`, { method: 'POST', body: formData });
                 const result = await response.json();
-                
-                if (response.ok) {
-                    document.getElementById('loading').classList.add('hidden');
-                    document.getElementById('results').classList.remove('hidden');
-                    
-                    document.getElementById('personCount').textContent = result.person_count;
-                    document.getElementById('outputImage').src = result.output_image;
 
-                    document.getElementById('avgConfidence').textContent = result.avg_confidence + '%';
-                    document.getElementById('processingTime').textContent = result.processing_time_ms + 'ms';
-
-                    const densityColors = {
-                        'Empty':     'bg-slate-600 text-slate-200',
-                        'Low':       'bg-emerald-500/20 text-emerald-400',
-                        'Medium':    'bg-yellow-500/20 text-yellow-400',
-                        'High':      'bg-orange-500/20 text-orange-400',
-                        'Very High': 'bg-red-500/20 text-red-400'
-                    };
-                    const badge = document.getElementById('densityBadge');
-                    badge.textContent = result.density_level;
-                    badge.className = 'text-sm font-bold px-3 py-1 rounded-full ' + (densityColors[result.density_level] || 'bg-slate-600 text-slate-200');
-                } else {
-                    throw new Error(result.error || 'Upload failed');
-                }
-            } catch (error) {
                 document.getElementById('loading').classList.add('hidden');
-                alert('Error: ' + error.message);
+
+                if (!response.ok) throw new Error(result.error || 'Failed');
+
+                document.getElementById('imageResults').classList.remove('hidden');
+                document.getElementById('personCount').textContent = result.person_count;
+                document.getElementById('avgConfidence').textContent = result.avg_confidence + '%';
+                document.getElementById('processingTime').textContent = result.processing_time_ms + 'ms';
+
+                const badge = document.getElementById('densityBadge');
+                badge.textContent = result.density_level;
+                badge.className = 'text-sm font-bold px-3 py-1 rounded-full ' + (densityColors[result.density_level] || '');
+
+                document.getElementById('outputImage').src = result.output_image;
+                document.getElementById('heatmapImage').src = result.heatmap_image;
+                showImgTab('original');
+
+                if (result.alert) {
+                    document.getElementById('alertBanner').classList.remove('hidden');
+                    document.getElementById('alertMsg').textContent = `${result.person_count} people detected — exceeds threshold of ${result.alert_threshold}`;
+                }
+
+            } catch (err) {
+                document.getElementById('loading').classList.add('hidden');
+                alert('Error: ' + err.message);
             } finally {
-                analyzeBtn.disabled = false;
+                document.getElementById('analyzeBtn').disabled = false;
             }
+        }
+
+        async function analyzeVideo() {
+            const file = document.getElementById('videoInput').files[0];
+            if (!file) return;
+
+            document.getElementById('analyzeBtn').disabled = true;
+            document.getElementById('loading').classList.remove('hidden');
+            document.getElementById('loadingText').textContent = 'Processing video... this may take a moment';
+            document.getElementById('videoResults').classList.add('hidden');
+            document.getElementById('alertBanner').classList.add('hidden');
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const response = await fetch('/upload-video', { method: 'POST', body: formData });
+                const result = await response.json();
+
+                document.getElementById('loading').classList.add('hidden');
+                if (!response.ok) throw new Error(result.error || 'Failed');
+
+                document.getElementById('videoResults').classList.remove('hidden');
+                document.getElementById('maxCount').textContent = result.max_count;
+                document.getElementById('avgCount').textContent = result.avg_count;
+
+                const badge = document.getElementById('videoDensityBadge');
+                badge.textContent = result.density_level;
+                badge.className = 'text-sm font-bold px-3 py-1 rounded-full ' + (densityColors[result.density_level] || '');
+
+                document.getElementById('videoPreview').src = result.preview_image;
+                document.getElementById('videoHeatmap').src = result.heatmap_image;
+                showVidTab('preview');
+
+                if (result.alert) {
+                    document.getElementById('alertBanner').classList.remove('hidden');
+                    document.getElementById('alertMsg').textContent = `Peak of ${result.max_count} people detected — exceeds threshold of ${result.alert_threshold}`;
+                }
+
+                renderChart(result.frame_results);
+
+            } catch (err) {
+                document.getElementById('loading').classList.add('hidden');
+                alert('Error: ' + err.message);
+            } finally {
+                document.getElementById('analyzeBtn').disabled = false;
+            }
+        }
+
+        function renderChart(frameResults) {
+            if (crowdChartInstance) crowdChartInstance.destroy();
+            const ctx = document.getElementById('crowdChart').getContext('2d');
+            crowdChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: frameResults.map(r => r.second + 's'),
+                    datasets: [{
+                        label: 'People Count',
+                        data: frameResults.map(r => r.count),
+                        borderColor: '#6366f1',
+                        backgroundColor: 'rgba(99,102,241,0.15)',
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 3,
+                        pointBackgroundColor: '#6366f1'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { labels: { color: '#94a3b8' } } },
+                    scales: {
+                        x: { ticks: { color: '#94a3b8' }, grid: { color: '#1e293b' } },
+                        y: { ticks: { color: '#94a3b8' }, grid: { color: '#1e293b' }, beginAtZero: true }
+                    }
+                }
+            });
+        }
+
+        function showImgTab(tab) {
+            ['original', 'detection', 'heatmap'].forEach(t => {
+                const imgId = t === 'original' ? 'originalImage' : t === 'detection' ? 'outputImage' : 'heatmapImage';
+                const btnId = t === 'original' ? 'btnOriginal' : t === 'detection' ? 'btnDetection' : 'btnHeatmap';
+                document.getElementById(imgId).classList.toggle('hidden', t !== tab);
+                document.getElementById(btnId).className = t === tab
+                    ? 'tab-active px-4 py-1.5 rounded-lg text-sm font-semibold transition-all'
+                    : 'px-4 py-1.5 rounded-lg text-sm font-semibold text-slate-400 hover:text-white transition-all';
+            });
+        }
+
+        function showVidTab(tab) {
+            document.getElementById('videoPreview').classList.toggle('hidden', tab !== 'preview');
+            document.getElementById('videoHeatmap').classList.toggle('hidden', tab !== 'vidheatmap');
+            document.getElementById('btnVidPreview').className = tab === 'preview'
+                ? 'tab-active px-4 py-1.5 rounded-lg text-sm font-semibold transition-all'
+                : 'px-4 py-1.5 rounded-lg text-sm font-semibold text-slate-400 hover:text-white transition-all';
+            document.getElementById('btnVidHeatmap').className = tab === 'vidheatmap'
+                ? 'tab-active px-4 py-1.5 rounded-lg text-sm font-semibold transition-all'
+                : 'px-4 py-1.5 rounded-lg text-sm font-semibold text-slate-400 hover:text-white transition-all';
         }
 
         function downloadResult() {

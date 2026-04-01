@@ -29,11 +29,33 @@ app.post('/upload', upload.single('file'), async (req, res) => {
 
         const formData = new FormData();
         formData.append('file', req.file.buffer, req.file.originalname);
+        const threshold = req.query.threshold || 10;
 
-        const response = await axios.post(`${process.env.PYTHON_API_URL}/upload`, formData, {
+        const response = await axios.post(`${process.env.PYTHON_API_URL}/upload?threshold=${threshold}`, formData, {
             headers: formData.getHeaders(),
             maxContentLength: Infinity,
             maxBodyLength: Infinity
+        });
+
+        res.json(response.data);
+    } catch (error) {
+        const msg = error.response?.data?.detail || error.message;
+        res.status(500).json({ error: msg });
+    }
+});
+
+app.post('/upload-video', upload.single('file'), async (req, res) => {
+    try {
+        if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+
+        const formData = new FormData();
+        formData.append('file', req.file.buffer, { filename: req.file.originalname, contentType: req.file.mimetype });
+
+        const response = await axios.post(`${process.env.PYTHON_API_URL}/upload-video`, formData, {
+            headers: formData.getHeaders(),
+            maxContentLength: Infinity,
+            maxBodyLength: Infinity,
+            timeout: 300000
         });
 
         res.json(response.data);
