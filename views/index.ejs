@@ -87,10 +87,14 @@
         <div id="imageResults" class="hidden space-y-6">
             <!-- Stats -->
             <div class="bg-slate-800/50 backdrop-blur-xl rounded-3xl p-4 sm:p-8 border border-slate-700/50 shadow-2xl glow">
-                <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div class="col-span-2 lg:col-span-1 flex flex-col items-center justify-center bg-slate-900/40 rounded-2xl p-4 gap-2">
-                        <p class="text-slate-400 text-xs font-medium">People Detected</p>
+                <div class="grid grid-cols-2 lg:grid-cols-5 gap-4">
+                    <div class="flex flex-col items-center justify-center bg-slate-900/40 rounded-2xl p-4 gap-2">
+                        <p class="text-slate-400 text-xs font-medium">👤 People Detected</p>
                         <p id="personCount" class="text-5xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">0</p>
+                    </div>
+                    <div class="flex flex-col items-center justify-center bg-slate-900/40 rounded-2xl p-4 gap-2">
+                        <p class="text-slate-400 text-xs font-medium">🚗 Cars Detected</p>
+                        <p id="carCount" class="text-5xl font-bold text-orange-400">0</p>
                     </div>
                     <div class="flex flex-col items-center justify-center bg-slate-900/40 rounded-2xl p-4 gap-2">
                         <p class="text-slate-400 text-xs font-medium">Avg Confidence</p>
@@ -126,10 +130,18 @@
         <!-- Video Results -->
         <div id="videoResults" class="hidden space-y-6">
             <div class="bg-slate-800/50 backdrop-blur-xl rounded-3xl p-4 sm:p-8 border border-slate-700/50 shadow-2xl glow">
-                <div class="grid grid-cols-2 lg:grid-cols-3 gap-4">
+                <div class="grid grid-cols-2 lg:grid-cols-5 gap-4">
                     <div class="flex flex-col items-center justify-center bg-slate-900/40 rounded-2xl p-4 gap-2">
-                        <p class="text-slate-400 text-xs font-medium">Peak Count</p>
+                        <p class="text-slate-400 text-xs font-medium">Peak Total</p>
                         <p id="maxCount" class="text-5xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">0</p>
+                    </div>
+                    <div class="flex flex-col items-center justify-center bg-slate-900/40 rounded-2xl p-4 gap-2">
+                        <p class="text-slate-400 text-xs font-medium">👤 Peak People</p>
+                        <p id="maxPersons" class="text-3xl font-bold text-indigo-400">0</p>
+                    </div>
+                    <div class="flex flex-col items-center justify-center bg-slate-900/40 rounded-2xl p-4 gap-2">
+                        <p class="text-slate-400 text-xs font-medium">🚗 Peak Cars</p>
+                        <p id="maxCars" class="text-3xl font-bold text-orange-400">0</p>
                     </div>
                     <div class="flex flex-col items-center justify-center bg-slate-900/40 rounded-2xl p-4 gap-2">
                         <p class="text-slate-400 text-xs font-medium">Avg Count</p>
@@ -256,6 +268,7 @@
 
                 document.getElementById('imageResults').classList.remove('hidden');
                 document.getElementById('personCount').textContent = result.person_count;
+                document.getElementById('carCount').textContent = result.car_count;
                 document.getElementById('avgConfidence').textContent = result.avg_confidence + '%';
                 document.getElementById('processingTime').textContent = result.processing_time_ms + 'ms';
 
@@ -302,6 +315,8 @@
 
                 document.getElementById('videoResults').classList.remove('hidden');
                 document.getElementById('maxCount').textContent = result.max_count;
+                document.getElementById('maxPersons').textContent = result.max_persons;
+                document.getElementById('maxCars').textContent = result.max_cars;
                 document.getElementById('avgCount').textContent = result.avg_count;
 
                 const badge = document.getElementById('videoDensityBadge');

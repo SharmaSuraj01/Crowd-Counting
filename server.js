@@ -9,8 +9,10 @@ const { spawn } = require('child_process');
 const app = express();
 const upload = multer({ storage: multer.memoryStorage() });
 
-const pythonProcess = spawn('python', ['main.py']);
+const PORT = process.env.PORT || 3000;
+const PYTHON_URL = process.env.PYTHON_API_URL;
 
+const pythonProcess = spawn('python', ['main.py']);
 pythonProcess.stdout.on('data', (data) => console.log(`Python: ${data}`));
 pythonProcess.stderr.on('data', (data) => console.error(`Python: ${data}`));
 process.on('exit', () => pythonProcess.kill());
@@ -21,7 +23,16 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 
+const analysisHistory = [];
+
 app.get('/', (req, res) => res.render('index'));
+
+app.get('/history', (req, res) => res.json(analysisHistory.slice(-20).reverse()));
+
+app.delete('/history', (req, res) => {
+    analysisHistory.length = 0;
+    res.json({ success: true });
+});
 
 app.post('/upload', upload.single('file'), async (req, res) => {
     try {
@@ -31,16 +42,28 @@ app.post('/upload', upload.single('file'), async (req, res) => {
         formData.append('file', req.file.buffer, req.file.originalname);
         const threshold = req.query.threshold || 10;
 
-        const response = await axios.post(`${process.env.PYTHON_API_URL}/upload?threshold=${threshold}`, formData, {
+        const response = await axios.post(`${PYTHON_URL}/upload?threshold=${threshold}`, formData, {
             headers: formData.getHeaders(),
             maxContentLength: Infinity,
             maxBodyLength: Infinity
         });
 
         res.json(response.data);
+
+        analysisHistory.push({
+            id: Date.now(),
+            type: 'image',
+            filename: req.file.originalname,
+            person_count: response.data.person_count,
+            car_count: response.data.car_count,
+            density_level: response.data.density_level,
+            avg_confidence: response.data.avg_confidence,
+            alert: response.data.alert,
+            timestamp: new Date().toLocaleString(),
+            thumbnail: response.data.output_image
+        });
     } catch (error) {
-        const msg = error.response?.data?.detail || error.message;
-        res.status(500).json({ error: msg });
+        res.status(500).json({ error: error.response?.data?.detail || error.message });
     }
 });
 
@@ -51,7 +74,7 @@ app.post('/upload-video', upload.single('file'), async (req, res) => {
         const formData = new FormData();
         formData.append('file', req.file.buffer, { filename: req.file.originalname, contentType: req.file.mimetype });
 
-        const response = await axios.post(`${process.env.PYTHON_API_URL}/upload-video`, formData, {
+        const response = await axios.post(`${PYTHON_URL}/upload-video`, formData, {
             headers: formData.getHeaders(),
             maxContentLength: Infinity,
             maxBodyLength: Infinity,
@@ -59,14 +82,33 @@ app.post('/upload-video', upload.single('file'), async (req, res) => {
         });
 
         res.json(response.data);
+
+        analysisHistory.push({
+            id: Date.now(),
+            type: 'video',
+            filename: req.file.originalname,
+            person_count: response.data.max_persons,
+            car_count: response.data.max_cars,
+            density_level: response.data.density_level,
+            avg_confidence: '-',
+            alert: response.data.alert,
+            timestamp: new Date().toLocaleString(),
+            thumbnail: response.data.preview_image
+        });
     } catch (error) {
-        const msg = error.response?.data?.detail || error.message;
-        res.status(500).json({ error: msg });
+        res.status(500).json({ error: error.response?.data?.detail || error.message });
     }
 });
 
-const PORT = process.env.PORT || 3000;
-const PYTHON_URL = process.env.PYTHON_API_URL;
+app.get('/webcam-frame', async (req, res) => {
+    try {
+        const threshold = req.query.threshold || 10;
+        const response = await axios.get(`${PYTHON_URL}/webcam-frame?threshold=${threshold}`);
+        res.json(response.data);
+    } catch (error) {
+        res.status(500).json({ error: error.response?.data?.detail || error.message });
+    }
+});
 
 function waitForPython(retries = 15) {
     axios.get(`${PYTHON_URL}/health`)
