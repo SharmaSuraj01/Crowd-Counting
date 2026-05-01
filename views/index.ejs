@@ -35,10 +35,11 @@
         <div class="flex gap-3 mb-6 bg-slate-800/50 p-2 rounded-2xl border border-slate-700/50 w-fit mx-auto">
             <button id="tabImage" onclick="switchMode('image')" class="tab-active px-6 py-2 rounded-xl font-semibold text-sm transition-all duration-300">🖼 Image</button>
             <button id="tabVideo" onclick="switchMode('video')" class="px-6 py-2 rounded-xl font-semibold text-sm text-slate-400 hover:text-white transition-all duration-300">🎥 Video</button>
+            <button id="tabWebcam" onclick="switchMode('webcam')" class="px-6 py-2 rounded-xl font-semibold text-sm text-slate-400 hover:text-white transition-all duration-300">📷 Live Webcam</button>
         </div>
 
         <!-- Upload Card -->
-        <div class="bg-slate-800/50 backdrop-blur-xl rounded-3xl p-4 sm:p-8 mb-8 border border-slate-700/50 shadow-2xl">
+        <div id="uploadCard" class="bg-slate-800/50 backdrop-blur-xl rounded-3xl p-4 sm:p-8 mb-8 border border-slate-700/50 shadow-2xl">
             <div id="uploadArea" class="border-3 border-dashed border-slate-600 rounded-2xl p-8 sm:p-16 text-center transition-all duration-300 hover:border-indigo-500 hover:bg-slate-700/30 cursor-pointer">
                 <svg class="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-4 sm:mb-6 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
@@ -68,6 +69,59 @@
             </button>
         </div>
 
+        <!-- Webcam Card -->
+        <div id="webcamCard" class="hidden bg-slate-800/50 backdrop-blur-xl rounded-3xl p-4 sm:p-8 mb-8 border border-slate-700/50 shadow-2xl">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div>
+                    <h3 class="text-white font-semibold mb-3">📷 Live Camera Feed</h3>
+                    <video id="webcamVideo" autoplay muted playsinline class="w-full rounded-2xl shadow-xl bg-black"></video>
+                    <div class="flex gap-3 mt-4">
+                        <button id="startWebcamBtn" onclick="startWebcam()" class="flex-1 bg-gradient-to-r from-indigo-500 to-purple-600 text-white py-2 rounded-xl font-semibold text-sm hover:scale-105 transition-all">▶ Start Camera</button>
+                        <button id="stopWebcamBtn" onclick="stopWebcam()" disabled class="flex-1 bg-gradient-to-r from-red-500 to-rose-600 text-white py-2 rounded-xl font-semibold text-sm disabled:from-slate-600 disabled:to-slate-700 disabled:cursor-not-allowed hover:scale-105 transition-all">⏹ Stop</button>
+                    </div>
+                    <div class="mt-3 flex items-center gap-3 bg-slate-900/40 rounded-xl px-4 py-2">
+                        <span class="text-slate-400 text-xs">Analysis Speed:</span>
+                        <select id="webcamFps" class="bg-slate-700 text-white text-xs rounded-lg px-2 py-1 border border-slate-600">
+                            <option value="2000">Slow (every 2s)</option>
+                            <option value="1000" selected>Normal (every 1s)</option>
+                            <option value="500">Fast (every 0.5s)</option>
+                        </select>
+                        <div id="webcamStatus" class="ml-auto flex items-center gap-2">
+                            <div id="webcamDot" class="w-2 h-2 rounded-full bg-slate-500"></div>
+                            <span id="webcamStatusText" class="text-slate-400 text-xs">Idle</span>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <h3 class="text-white font-semibold mb-3">🎯 Live Detection</h3>
+                    <img id="webcamOutput" class="w-full rounded-2xl shadow-xl bg-slate-900/50 min-h-[200px]" alt="Detection output">
+                    <div class="grid grid-cols-2 gap-3 mt-4">
+                        <div class="bg-slate-900/40 rounded-xl p-3 text-center">
+                            <p class="text-slate-400 text-xs">👤 People</p>
+                            <p id="wcPersonCount" class="text-3xl font-bold text-indigo-400">0</p>
+                            <div class="flex justify-center gap-2 mt-1">
+                                <span class="text-xs text-blue-400">👨 <span id="wcMale">0</span></span>
+                                <span class="text-xs text-pink-400">👩 <span id="wcFemale">0</span></span>
+                            </div>
+                        </div>
+                        <div class="bg-slate-900/40 rounded-xl p-3 text-center">
+                            <p class="text-slate-400 text-xs">Density</p>
+                            <span id="wcDensity" class="text-sm font-bold px-2 py-1 rounded-full bg-slate-600 text-slate-200">-</span>
+                        </div>
+                        <div class="bg-slate-900/40 rounded-xl p-3 text-center">
+                            <p class="text-slate-400 text-xs">🎯 Confidence</p>
+                            <p id="wcConfidence" class="text-2xl font-bold text-emerald-400">0%</p>
+                        </div>
+                        <div class="bg-slate-900/40 rounded-xl p-3 text-center">
+                            <p class="text-slate-400 text-xs">⚡ Speed</p>
+                            <p id="wcSpeed" class="text-2xl font-bold text-sky-400">0ms</p>
+                        </div>
+                    </div>
+                    <div id="wcObjects" class="mt-3 flex flex-wrap gap-2"></div>
+                </div>
+            </div>
+        </div>
+
         <!-- Loading -->
         <div id="loading" class="hidden bg-slate-800/50 backdrop-blur-xl rounded-3xl p-8 sm:p-16 text-center border border-slate-700/50 shadow-2xl">
             <div class="w-16 h-16 sm:w-20 sm:h-20 border-4 border-slate-600 border-t-indigo-500 rounded-full animate-spin mx-auto mb-4 sm:mb-6"></div>
@@ -91,6 +145,10 @@
                     <div class="flex flex-col items-center justify-center bg-slate-900/40 rounded-2xl p-4 gap-2">
                         <p class="text-slate-400 text-xs font-medium">👤 People Detected</p>
                         <p id="personCount" class="text-5xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">0</p>
+                        <div class="flex gap-3">
+                            <span class="text-xs font-bold text-blue-400">👨 <span id="maleCount">0</span></span>
+                            <span class="text-xs font-bold text-pink-400">👩 <span id="femaleCount">0</span></span>
+                        </div>
                     </div>
                     <div class="flex flex-col items-center justify-center bg-slate-900/40 rounded-2xl p-4 gap-2">
                         <p class="text-slate-400 text-xs font-medium">🚗 Cars Detected</p>
@@ -156,8 +214,23 @@
 
             <!-- Crowd Over Time Chart -->
             <div class="bg-slate-800/50 backdrop-blur-xl rounded-3xl p-4 sm:p-8 border border-slate-700/50 shadow-2xl">
-                <h3 class="text-white font-semibold mb-4">📈 Crowd Count Over Time</h3>
+                <h3 class="text-white font-semibold mb-2">📈 Crowd Count Over Time</h3>
+                <p class="text-slate-400 text-xs mb-4">💡 Click on any point to see detection for that frame</p>
                 <canvas id="crowdChart" height="100"></canvas>
+            </div>
+
+            <!-- Frame Modal -->
+            <div id="frameModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+                <div class="bg-slate-800 rounded-3xl border border-slate-600 shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+                    <div class="flex items-center justify-between p-4 border-b border-slate-700">
+                        <h3 id="modalTitle" class="text-white font-bold text-lg">Frame Detection</h3>
+                        <button onclick="closeModal()" class="text-slate-400 hover:text-white text-2xl leading-none">&times;</button>
+                    </div>
+                    <div class="p-4">
+                        <img id="modalImage" class="w-full rounded-2xl shadow-xl mb-4" alt="Frame Detection">
+                        <div id="modalStats" class="grid grid-cols-2 sm:grid-cols-4 gap-3"></div>
+                    </div>
+                </div>
             </div>
 
             <!-- Video Preview Tabs -->
@@ -178,6 +251,10 @@
     <script>
         let currentMode = 'image';
         let crowdChartInstance = null;
+        let webcamStream = null;
+        let webcamInterval = null;
+        let webcamBusy = false;
+        let webcamCanvas = document.createElement('canvas');
 
         const densityColors = {
             'Empty':     'bg-slate-600 text-slate-200',
@@ -189,13 +266,17 @@
 
         function switchMode(mode) {
             currentMode = mode;
-            document.getElementById('tabImage').className = mode === 'image'
-                ? 'tab-active px-6 py-2 rounded-xl font-semibold text-sm transition-all duration-300'
-                : 'px-6 py-2 rounded-xl font-semibold text-sm text-slate-400 hover:text-white transition-all duration-300';
-            document.getElementById('tabVideo').className = mode === 'video'
-                ? 'tab-active px-6 py-2 rounded-xl font-semibold text-sm transition-all duration-300'
-                : 'px-6 py-2 rounded-xl font-semibold text-sm text-slate-400 hover:text-white transition-all duration-300';
-            document.getElementById('uploadTitle').textContent = mode === 'image' ? 'Upload Image' : 'Upload Video';
+            ['image','video','webcam'].forEach(m => {
+                const btn = document.getElementById('tab' + m.charAt(0).toUpperCase() + m.slice(1));
+                btn.className = m === mode
+                    ? 'tab-active px-6 py-2 rounded-xl font-semibold text-sm transition-all duration-300'
+                    : 'px-6 py-2 rounded-xl font-semibold text-sm text-slate-400 hover:text-white transition-all duration-300';
+            });
+            document.getElementById('uploadCard').classList.toggle('hidden', mode === 'webcam');
+            document.getElementById('webcamCard').classList.toggle('hidden', mode !== 'webcam');
+            if (mode !== 'webcam') stopWebcam();
+            if (mode === 'image') document.getElementById('uploadTitle').textContent = 'Upload Image';
+            if (mode === 'video') document.getElementById('uploadTitle').textContent = 'Upload Video';
             document.getElementById('fileName').textContent = 'Drag & drop or click to browse';
             document.getElementById('analyzeBtn').disabled = true;
             document.getElementById('imageResults').classList.add('hidden');
@@ -204,6 +285,7 @@
         }
 
         function triggerUpload() {
+            if (currentMode === 'webcam') return;
             document.getElementById(currentMode === 'image' ? 'imageInput' : 'videoInput').click();
         }
 
@@ -235,6 +317,87 @@
                 document.getElementById('analyzeBtn').disabled = false;
             }
         });
+
+        async function startWebcam() {
+            try {
+                webcamStream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 }, audio: false });
+                const video = document.getElementById('webcamVideo');
+                video.srcObject = webcamStream;
+                await new Promise(r => video.onloadedmetadata = r);
+                await video.play();
+                document.getElementById('startWebcamBtn').disabled = true;
+                document.getElementById('stopWebcamBtn').disabled = false;
+                document.getElementById('webcamDot').className = 'w-2 h-2 rounded-full bg-emerald-400 animate-pulse';
+                document.getElementById('webcamStatusText').textContent = 'Live';
+                webcamBusy = false;
+                const interval = parseInt(document.getElementById('webcamFps').value);
+                webcamInterval = setInterval(captureAndAnalyze, interval);
+            } catch(e) {
+                alert('Camera error: ' + e.message);
+            }
+        }
+
+        function stopWebcam() {
+            if (webcamInterval) { clearInterval(webcamInterval); webcamInterval = null; }
+            if (webcamStream) { webcamStream.getTracks().forEach(t => t.stop()); webcamStream = null; }
+            webcamBusy = false;
+            const video = document.getElementById('webcamVideo');
+            if (video) video.srcObject = null;
+            const startBtn = document.getElementById('startWebcamBtn');
+            const stopBtn = document.getElementById('stopWebcamBtn');
+            const dot = document.getElementById('webcamDot');
+            const statusText = document.getElementById('webcamStatusText');
+            if (startBtn) startBtn.disabled = false;
+            if (stopBtn) stopBtn.disabled = true;
+            if (dot) dot.className = 'w-2 h-2 rounded-full bg-slate-500';
+            if (statusText) statusText.textContent = 'Idle';
+        }
+
+        async function captureAndAnalyze() {
+            if (webcamBusy) return;  // skip if previous request still running
+            const video = document.getElementById('webcamVideo');
+            if (!video || !video.videoWidth || !webcamStream) return;
+            webcamBusy = true;
+            try {
+                webcamCanvas.width = video.videoWidth;
+                webcamCanvas.height = video.videoHeight;
+                webcamCanvas.getContext('2d').drawImage(video, 0, 0);
+                const blob = await new Promise(r => webcamCanvas.toBlob(r, 'image/jpeg', 0.85));
+                if (!blob) return;
+                const formData = new FormData();
+                formData.append('file', blob, 'frame.jpg');
+                const threshold = document.getElementById('thresholdSlider').value;
+                const res = await fetch(`/webcam-frame?threshold=${threshold}`, { method: 'POST', body: formData });
+                if (!res.ok) return;
+                const data = await res.json();
+                // Update detection image
+                const outImg = document.getElementById('webcamOutput');
+                outImg.src = data.output_image;
+                outImg.style.display = 'block';
+                // Update stats
+                document.getElementById('wcPersonCount').textContent = data.person_count;
+                document.getElementById('wcMale').textContent = data.male_count;
+                document.getElementById('wcFemale').textContent = data.female_count;
+                document.getElementById('wcConfidence').textContent = data.avg_confidence + '%';
+                document.getElementById('wcSpeed').textContent = data.processing_time_ms + 'ms';
+                const wcDensity = document.getElementById('wcDensity');
+                wcDensity.textContent = data.density_level;
+                wcDensity.className = 'text-sm font-bold px-2 py-1 rounded-full ' + (densityColors[data.density_level] || 'bg-slate-600 text-slate-200');
+                const objHtml = Object.entries(data.object_counts || {}).map(([k,v]) =>
+                    `<span class="bg-slate-700 text-white text-xs px-2 py-1 rounded-lg">${k}: ${v}</span>`).join('');
+                document.getElementById('wcObjects').innerHTML = objHtml;
+                if (data.alert) {
+                    document.getElementById('alertBanner').classList.remove('hidden');
+                    document.getElementById('alertMsg').textContent = `🚨 ${data.person_count} people in live feed — threshold exceeded!`;
+                } else {
+                    document.getElementById('alertBanner').classList.add('hidden');
+                }
+            } catch(e) {
+                console.error('Webcam analysis error:', e);
+            } finally {
+                webcamBusy = false;
+            }
+        }
 
         async function analyze() {
             currentMode === 'image' ? await analyzeImage() : await analyzeVideo();
@@ -268,7 +431,9 @@
 
                 document.getElementById('imageResults').classList.remove('hidden');
                 document.getElementById('personCount').textContent = result.person_count;
-                document.getElementById('carCount').textContent = result.car_count;
+                document.getElementById('maleCount').textContent = result.male_count;
+                document.getElementById('femaleCount').textContent = result.female_count;
+                document.getElementById('carCount').textContent = (result.object_counts && result.object_counts['Car']) || 0;
                 document.getElementById('avgConfidence').textContent = result.avg_confidence + '%';
                 document.getElementById('processingTime').textContent = result.processing_time_ms + 'ms';
 
@@ -356,20 +521,74 @@
                         backgroundColor: 'rgba(99,102,241,0.15)',
                         fill: true,
                         tension: 0.4,
-                        pointRadius: 3,
-                        pointBackgroundColor: '#6366f1'
+                        pointRadius: 5,
+                        pointHoverRadius: 8,
+                        pointBackgroundColor: '#6366f1',
+                        pointHoverBackgroundColor: '#a855f7',
+                        pointHoverBorderColor: '#fff',
+                        pointHoverBorderWidth: 2
                     }]
                 },
                 options: {
                     responsive: true,
-                    plugins: { legend: { labels: { color: '#94a3b8' } } },
+                    cursor: 'pointer',
+                    plugins: {
+                        legend: { labels: { color: '#94a3b8' } },
+                        tooltip: {
+                            callbacks: {
+                                afterLabel: () => '👆 Click to view detection'
+                            }
+                        }
+                    },
                     scales: {
                         x: { ticks: { color: '#94a3b8' }, grid: { color: '#1e293b' } },
                         y: { ticks: { color: '#94a3b8' }, grid: { color: '#1e293b' }, beginAtZero: true }
+                    },
+                    onClick: (event, elements) => {
+                        if (elements.length > 0) {
+                            const idx = elements[0].index;
+                            openFrameModal(frameResults[idx]);
+                        }
                     }
                 }
             });
         }
+
+        function openFrameModal(frame) {
+            document.getElementById('modalTitle').textContent = `⏱ ${frame.second}s — ${frame.count} people detected`;
+            document.getElementById('modalImage').src = frame.frame_image;
+            const objects = Object.entries(frame.objects || {}).map(([k,v]) => `<div class="bg-slate-900/60 rounded-xl p-3 text-center"><p class="text-slate-400 text-xs">${k}</p><p class="text-white font-bold text-xl">${v}</p></div>`).join('');
+            document.getElementById('modalStats').innerHTML = `
+                <div class="bg-slate-900/60 rounded-xl p-3 text-center">
+                    <p class="text-slate-400 text-xs">👤 People</p>
+                    <p class="text-indigo-400 font-bold text-xl">${frame.count}</p>
+                    <div class="flex justify-center gap-2 mt-1">
+                        <span class="text-xs text-blue-400">👨 ${frame.males}</span>
+                        <span class="text-xs text-pink-400">👩 ${frame.females}</span>
+                    </div>
+                </div>
+                <div class="bg-slate-900/60 rounded-xl p-3 text-center">
+                    <p class="text-slate-400 text-xs">🎯 Confidence</p>
+                    <p class="text-emerald-400 font-bold text-xl">${frame.confidence}%</p>
+                </div>
+                <div class="bg-slate-900/60 rounded-xl p-3 text-center">
+                    <p class="text-slate-400 text-xs">⚡ Process Time</p>
+                    <p class="text-sky-400 font-bold text-xl">${frame.processing_time_ms}ms</p>
+                </div>
+                ${objects}
+            `;
+            document.getElementById('frameModal').classList.remove('hidden');
+            document.getElementById('frameModal').classList.add('flex');
+        }
+
+        function closeModal() {
+            document.getElementById('frameModal').classList.add('hidden');
+            document.getElementById('frameModal').classList.remove('flex');
+        }
+
+        document.getElementById('frameModal').addEventListener('click', function(e) {
+            if (e.target === this) closeModal();
+        });
 
         function showImgTab(tab) {
             ['original', 'detection', 'heatmap'].forEach(t => {

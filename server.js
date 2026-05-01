@@ -100,10 +100,18 @@ app.post('/upload-video', upload.single('file'), async (req, res) => {
     }
 });
 
-app.get('/webcam-frame', async (req, res) => {
+app.post('/webcam-frame', upload.single('file'), async (req, res) => {
     try {
+        if (!req.file) return res.status(400).json({ error: 'No frame received' });
+        const formData = new FormData();
+        formData.append('file', req.file.buffer, { filename: 'frame.jpg', contentType: 'image/jpeg' });
         const threshold = req.query.threshold || 10;
-        const response = await axios.get(`${PYTHON_URL}/webcam-frame?threshold=${threshold}`);
+        const response = await axios.post(`${PYTHON_URL}/webcam-frame?threshold=${threshold}`, formData, {
+            headers: formData.getHeaders(),
+            maxContentLength: Infinity,
+            maxBodyLength: Infinity,
+            timeout: 15000
+        });
         res.json(response.data);
     } catch (error) {
         res.status(500).json({ error: error.response?.data?.detail || error.message });
